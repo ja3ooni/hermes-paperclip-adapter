@@ -50,8 +50,7 @@ tools, persistent memory, session persistence, skills, and MCP support.
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | model | string | anthropic/claude-sonnet-4 | Model to use (provider/model format) |
-| provider | string | (auto) | API provider: anthropic, openrouter, openai |
-| maxIterations | number | 50 | Maximum tool-calling iterations per run |
+| provider | string | (auto) | API provider: auto, openrouter, nous, openai-codex, zai, kimi-coding, minimax, minimax-cn. Usually not needed — Hermes auto-detects from model name. |
 | timeoutSec | number | 300 | Execution timeout in seconds |
 | graceSec | number | 10 | Grace period after SIGTERM before SIGKILL |
 
@@ -59,23 +58,22 @@ tools, persistent memory, session persistence, skills, and MCP support.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| enabledToolsets | string[] | (all) | Toolsets to enable: terminal, file, web, browser, etc. |
-| disabledToolsets | string[] | [] | Toolsets to disable |
+| toolsets | string | (all) | Comma-separated toolsets to enable (e.g. "terminal,file,web") |
 
-## Session & Memory
+## Session & Workspace
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | persistSession | boolean | true | Resume sessions across heartbeats |
-| skipMemory | boolean | false | Disable persistent memory |
 | worktreeMode | boolean | false | Use git worktree for isolated changes |
+| checkpoints | boolean | false | Enable filesystem checkpoints |
 
 ## Advanced
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | hermesCommand | string | hermes | Path to hermes CLI binary |
-| contextFiles | string[] | [] | Extra context files to load |
+| verbose | boolean | false | Enable verbose output |
 | extraArgs | string[] | [] | Additional CLI arguments |
 | env | object | {} | Extra environment variables |
 | promptTemplate | string | (default) | Custom prompt template with {{variable}} placeholders |

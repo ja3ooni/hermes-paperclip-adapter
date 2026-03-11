@@ -3,6 +3,16 @@
  *
  * Spawns `hermes chat -q "..."` as a child process, streams output,
  * and returns structured results to Paperclip.
+ *
+ * Verified CLI flags (hermes chat):
+ *   -q/--query         single query (non-interactive)
+ *   -m/--model         model name (e.g. anthropic/claude-sonnet-4)
+ *   -t/--toolsets      comma-separated toolsets to enable
+ *   --provider         inference provider (auto, openrouter, nous, etc.)
+ *   -r/--resume        resume session by ID
+ *   -w/--worktree      isolated git worktree
+ *   -v/--verbose       verbose output
+ *   --checkpoints      filesystem checkpoints
  */
 
 import type {
@@ -22,15 +32,15 @@ import {
   HERMES_CLI,
   DEFAULT_TIMEOUT_SEC,
   DEFAULT_GRACE_SEC,
-  DEFAULT_MAX_ITERATIONS,
   DEFAULT_MODEL,
   SESSION_ID_REGEX,
   TOKEN_USAGE_REGEX,
   COST_REGEX,
+  VALID_PROVIDERS,
 } from "../shared/constants.js";
 
 // ---------------------------------------------------------------------------
-// Config helpers (wrapping adapter-utils versions with optional semantics)
+// Config helpers
 // ---------------------------------------------------------------------------
 
 function cfgString(v: unknown): string | undefined {
@@ -190,18 +200,14 @@ export async function execute(
   const hermesCmd = cfgString(config.hermesCommand) || HERMES_CLI;
   const model = cfgString(config.model) || DEFAULT_MODEL;
   const provider = cfgString(config.provider);
-  const maxIterations =
-    cfgNumber(config.maxIterations) || DEFAULT_MAX_ITERATIONS;
   const timeoutSec = cfgNumber(config.timeoutSec) || DEFAULT_TIMEOUT_SEC;
   const graceSec = cfgNumber(config.graceSec) || DEFAULT_GRACE_SEC;
-  const enabledToolsets = cfgStringArray(config.enabledToolsets);
-  const disabledToolsets = cfgStringArray(config.disabledToolsets);
-  const contextFiles = cfgStringArray(config.contextFiles);
+  const toolsets = cfgString(config.toolsets) || cfgStringArray(config.enabledToolsets)?.join(",");
   const extraArgs = cfgStringArray(config.extraArgs);
   const persistSession = cfgBoolean(config.persistSession) !== false; // default true
-  const skipMemory = cfgBoolean(config.skipMemory) === true;
   const worktreeMode = cfgBoolean(config.worktreeMode) === true;
-  const quietMode = cfgBoolean(config.quietMode) !== false; // default true
+  const verbose = cfgBoolean(config.verbose) === true;
+  const checkpoints = cfgBoolean(config.checkpoints) === true;
 
   // ── Build prompt ───────────────────────────────────────────────────────
   const prompt = buildPrompt(ctx, config);
@@ -209,25 +215,22 @@ export async function execute(
   // ── Build command args ─────────────────────────────────────────────────
   const args: string[] = ["chat", "-q", prompt];
 
-  args.push("--model", model);
-  if (provider) args.push("--provider", provider);
-  args.push("--max-iterations", String(maxIterations));
+  args.push("-m", model);
 
-  if (quietMode) args.push("--quiet");
-  if (skipMemory) args.push("--skip-memory");
+  // Only pass --provider if it's a valid Hermes provider choice.
+  // For models like anthropic/claude-sonnet-4, Hermes auto-detects
+  // the provider from the model name — no flag needed.
+  if (provider && (VALID_PROVIDERS as readonly string[]).includes(provider)) {
+    args.push("--provider", provider);
+  }
+
+  if (toolsets) {
+    args.push("-t", toolsets);
+  }
+
+  if (verbose) args.push("-v");
   if (worktreeMode) args.push("-w");
-
-  if (enabledToolsets?.length) {
-    args.push("--toolsets", enabledToolsets.join(","));
-  }
-  if (disabledToolsets?.length) {
-    args.push("--disable-toolsets", disabledToolsets.join(","));
-  }
-  if (contextFiles?.length) {
-    for (const f of contextFiles) {
-      args.push("--context-file", f);
-    }
-  }
+  if (checkpoints) args.push("--checkpoints");
 
   // Session resume: if we have a previous session, resume it
   const prevSessionId = cfgString(
@@ -237,6 +240,7 @@ export async function execute(
     args.push("--resume", prevSessionId);
   }
 
+  // Extra CLI args (must be valid hermes flags)
   if (extraArgs?.length) {
     args.push(...extraArgs);
   }
@@ -274,7 +278,7 @@ export async function execute(
   );
   await ctx.onLog(
     "stdout",
-    `[hermes] Command: ${hermesCmd} ${args.slice(0, 3).join(" ")} ...\n`,
+    `[hermes] Command: ${hermesCmd} chat -q "..." -m ${model}\n`,
   );
   if (prevSessionId) {
     await ctx.onLog(
@@ -297,7 +301,7 @@ export async function execute(
 
   await ctx.onLog(
     "stdout",
-    `[hermes] Exit code: ${result.exitCode ?? "null"}, timed out: ${result.timedOut ?? false}\n`,
+    `[hermes] Exit code: ${result.exitCode ?? "null"}, timed out: ${result.timedOut}\n`,
   );
 
   // ── Build result ───────────────────────────────────────────────────────
@@ -305,7 +309,7 @@ export async function execute(
     exitCode: result.exitCode,
     signal: result.signal,
     timedOut: result.timedOut,
-    provider: provider || "anthropic",
+    provider: provider || null,
     model,
   };
 

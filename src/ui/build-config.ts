@@ -10,7 +10,6 @@ import type { CreateConfigValues } from "@paperclipai/adapter-utils";
 import {
   DEFAULT_MODEL,
   DEFAULT_TIMEOUT_SEC,
-  DEFAULT_MAX_ITERATIONS,
 } from "../shared/constants.js";
 
 /**
@@ -26,7 +25,7 @@ export function buildHermesConfig(
 
   // Execution limits
   ac.timeoutSec = DEFAULT_TIMEOUT_SEC;
-  ac.maxIterations = v.maxTurnsPerRun || DEFAULT_MAX_ITERATIONS;
+  // maxTurnsPerRun maps to Hermes's max_turns (set via config, not CLI flag)
 
   // Session persistence (default: on)
   ac.persistSession = true;

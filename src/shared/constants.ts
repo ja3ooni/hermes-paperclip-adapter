@@ -17,11 +17,23 @@ export const DEFAULT_TIMEOUT_SEC = 300;
 /** Grace period after SIGTERM before SIGKILL (seconds). */
 export const DEFAULT_GRACE_SEC = 10;
 
-/** Default maximum tool-calling iterations per run. */
-export const DEFAULT_MAX_ITERATIONS = 50;
-
 /** Default model to use if none specified. */
 export const DEFAULT_MODEL = "anthropic/claude-sonnet-4";
+
+/**
+ * Valid --provider choices for the hermes CLI.
+ * When not specified, Hermes auto-detects from model name.
+ */
+export const VALID_PROVIDERS = [
+  "auto",
+  "openrouter",
+  "nous",
+  "openai-codex",
+  "zai",
+  "kimi-coding",
+  "minimax",
+  "minimax-cn",
+] as const;
 
 /** Regex to extract session ID from Hermes CLI output. */
 export const SESSION_ID_REGEX = /session[_ ](?:id|saved)[:\s]+([a-zA-Z0-9_-]+)/i;
@@ -38,11 +50,3 @@ export const TOOL_OUTPUT_PREFIX = "┊";
 
 /** Prefix for Hermes thinking blocks. */
 export const THINKING_PREFIX = "💭";
-
-/** Known Hermes error patterns. */
-export const ERROR_PATTERNS = [
-  /error[:\s]+(.+)/i,
-  /exception[:\s]+(.+)/i,
-  /failed[:\s]+(.+)/i,
-  /api[_ ]?error[:\s]+(.+)/i,
-] as const;
