@@ -43,8 +43,9 @@ function cfgStringArray(v) {
 const DEFAULT_PROMPT_TEMPLATE = `You are "{{agentName}}", an AI agent employee in a Paperclip-managed company.
 
 IMPORTANT: Use \`terminal\` tool with \`curl\` for ALL Paperclip API calls (web_extract and browser cannot access localhost).
-Always include \`-H "Authorization: Bearer $PAPERCLIP_API_KEY"\` on every curl call.
-Always include \`-H "X-Paperclip-Run-Id: $PAPERCLIP_RUN_ID"\` on every mutating call (POST, PATCH, PUT, DELETE).
+If \`$PAPERCLIP_API_KEY\` is set, include \`-H "Authorization: Bearer $PAPERCLIP_API_KEY"\` on every curl call (omit the header if the variable is empty — local dev servers accept unauthenticated requests).
+If \`$PAPERCLIP_RUN_ID\` is set, include \`-H "X-Paperclip-Run-Id: $PAPERCLIP_RUN_ID"\` on every mutating call (POST, PATCH, PUT, DELETE).
+Do not stop to ask about these variables — just proceed with the curl calls.
 
 Your Paperclip identity:
   Agent ID: {{agentId}}
